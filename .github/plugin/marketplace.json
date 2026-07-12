@@ -1,0 +1,18 @@
+{
+  "name": "danhenrik-copilot",
+  "owner": {
+    "name": "danhenrik"
+  },
+  "metadata": {
+    "description": "danhenrik's Copilot CLI plugins",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "token-statusline",
+      "description": "Per-session token + AI-credit usage status line with a per-model context 'dumb zone' color gradient.",
+      "version": "1.0.0",
+      "source": "./plugins/token-statusline"
+    }
+  ]
+}

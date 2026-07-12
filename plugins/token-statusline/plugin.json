@@ -1,0 +1,12 @@
+{
+  "name": "token-statusline",
+  "description": "Per-session token + AI-credit usage status line for Copilot CLI, with a per-model context 'dumb zone' color gradient. Bundles a setup skill that wires it into your settings.json.",
+  "version": "1.0.0",
+  "author": {
+    "name": "danhenrik"
+  },
+  "license": "MIT",
+  "keywords": ["statusline", "tokens", "context", "ai-credits", "usage", "footer", "cost"],
+  "category": "productivity",
+  "skills": "skills/"
+}

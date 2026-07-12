@@ -1,0 +1,10 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local settings backups the installer may create if run in-tree
+settings.json.bak
+
+# Node (this project has no dependencies, but just in case)
+node_modules/
