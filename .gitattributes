@@ -1,0 +1,4 @@
+# Golden test fixtures are compared verbatim / JSON-parsed by the test harness.
+# Pin them to LF so a Windows checkout (core.autocrlf=true) never rewrites them
+# to CRLF, which would otherwise cause churn when `npm run test:update` runs.
+plugins/token-statusline/test/golden/** text eol=lf

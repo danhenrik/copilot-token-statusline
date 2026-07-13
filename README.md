@@ -123,6 +123,7 @@ The status-line script reads these at render time:
 | `COPILOT_STATUSLINE_COLOR` | `auto` | Base color of the ordinary status text. `none`/`off` disables color; `auto`/`github`/`dark` = grey `#9198A1`; `light` = `#59636e`; `dim` = faint; or a bare SGR / `R;G;B` triple. |
 | `NO_COLOR` | — | Standard: any non-empty value disables color. |
 | `COPILOT_STATUSLINE_ZONES` | — | Override the per-model dumb-zone anchors (advanced). |
+| `COPILOT_STATUSLINE_DEBUG_DUMP` | — | Debug/dev: set to a file path to write every render's raw stdin payload there (or `1` for the default `<COPILOT_HOME>/statusline/debug/payload.json`). Handy for capturing real payloads as test fixtures. See [Testing](#testing). |
 | `COPILOT_HOME` | `~/.copilot` | Base dir for the script + settings. |
 
 ---
@@ -194,14 +195,65 @@ plugins/token-statusline/
 │  ├─ zones.js           # per-model "dumb zone" map + danger score (0..1)
 │  ├─ compaction.js      # recover promptTokenLimit + the ⚠ near-compaction marker
 │  ├─ spike.js           # bridge to the token-spike extension's activity file
-│  └─ ledger.js          # atomic per-session ledger writer
+│  ├─ ledger.js          # atomic per-session ledger writer
+│  └─ debug.js           # optional raw-payload capture (test-fixture helper)
 ├─ install.js / uninstall.js
+├─ test/                 # golden regression tests (node --test, zero deps)
+│  ├─ statusline.test.js #   the only auto-discovered test file
+│  ├─ cases.json         #   fixtures (incl. one sanitized real payload)
+│  └─ golden/            #   checked-in expected stdout + ledger per case
+├─ tools/                # dev helpers, kept OUT of test/ so they aren't auto-run
+│  ├─ harness.js         #   shared runner (isolated COPILOT_HOME per case)
+│  └─ generate-goldens.js#   regenerate goldens after an intentional change
 └─ extensions/token-spike/   # optional onPostToolUse hook (big-output detector)
 ```
 
 `token-usage.js` `require()`s `./lib/*` relative to its own location, so it runs
 correctly from any working directory — but the `lib/` folder **must** be
 deployed next to it (the installer copies both into `~/.copilot/statusline/`).
+
+---
+
+## Testing
+
+The rendering + ledger logic is covered by golden regression tests — plain Node
+(`node --test`), **no dependencies, no build**. Each case in
+`test/cases.json` is piped through the real entry point in an isolated
+`COPILOT_HOME` and its stdout + per-session ledger are compared byte-for-byte
+against the checked-in goldens in `test/golden/` (the non-deterministic
+`updated_at` timestamp is stripped before comparison).
+
+```shell
+cd plugins/token-statusline
+npm test                 # node --test test/statusline.test.js
+```
+
+After an **intentional** change to the output or ledger, regenerate and review
+the goldens:
+
+```shell
+npm run test:update      # node tools/generate-goldens.js
+git diff test/golden     # eyeball the change before committing
+```
+
+### Capturing real payloads
+
+Fixtures include a sanitized snapshot of a real Copilot CLI payload
+(`real-opus48-max`) so the tests exercise the true contract (e.g.
+`context_window_size` vs `displayed_context_limit`, and unknown extra fields the
+script must ignore). To capture your own from a live session, drop a one-shot
+marker and trigger a render:
+
+```shell
+# one-shot: the next render writes its raw payload, then removes the marker
+mkdir -p ~/.copilot/statusline/debug && touch ~/.copilot/statusline/debug/capture-next
+# ...do anything in the CLI so the footer re-renders...
+ls ~/.copilot/statusline/debug/payload-*.json
+```
+
+Or set `COPILOT_STATUSLINE_DEBUG_DUMP=<file>` before launching the CLI to dump
+every render. **Sanitize** captured payloads (paths, session ids) before adding
+them as fixtures.
 
 ---
 

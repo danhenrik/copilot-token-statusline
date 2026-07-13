@@ -1,0 +1,286 @@
+[
+  {
+    "name": "opus264-below-warn",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "session_id": "opus264-below-warn",
+      "session_name": "demo",
+      "cwd": "/repo",
+      "model": { "id": "claude-opus-4.8", "display_name": "claude-opus-4.8 · max" },
+      "context_window": {
+        "current_context_tokens": 100000, "displayed_context_limit": 264000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000, "total_cache_write_tokens": 1000, "total_reasoning_tokens": 2000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "opus264-warn",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "session_id": "opus264-warn", "model": { "id": "claude-opus-4.8" },
+      "context_window": {
+        "current_context_tokens": 152000, "displayed_context_limit": 264000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "opus264-past",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "session_id": "opus264-past", "model": { "id": "claude-opus-4.8" },
+      "context_window": {
+        "current_context_tokens": 162000, "displayed_context_limit": 264000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "opus1M-below-warn",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "session_id": "opus1M-below-warn", "model": { "id": "claude-opus-4.8" },
+      "context_window": {
+        "current_context_tokens": 700000, "displayed_context_limit": 1000000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "gpt5mini",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "session_id": "gpt5mini", "model": { "id": "gpt-5-mini" },
+      "context_window": {
+        "current_context_tokens": 98000, "displayed_context_limit": 192000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "sonnet46",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "session_id": "sonnet46", "model": { "id": "claude-sonnet-4.6" },
+      "context_window": {
+        "current_context_tokens": 130000, "displayed_context_limit": 200000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "gemini35-flash",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "session_id": "gemini35-flash", "model": { "id": "gemini-3.5-flash" },
+      "context_window": {
+        "current_context_tokens": 720000, "displayed_context_limit": 1000000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "codex",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "session_id": "codex", "model": { "id": "gpt-5.3-codex" },
+      "context_window": {
+        "current_context_tokens": 210000, "displayed_context_limit": 400000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "mai-marker-hidden",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "session_id": "mai-marker-hidden", "model": { "id": "mai-code-1-flash-picker" },
+      "context_window": {
+        "current_context_tokens": 150000, "displayed_context_limit": 264000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "color-hot",
+    "payload": {
+      "session_id": "color-hot", "model": { "id": "claude-opus-4.8" },
+      "context_window": {
+        "current_context_tokens": 159000, "displayed_context_limit": 264000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "nograd-hot",
+    "env": { "COPILOT_STATUSLINE_NO_GRADIENT": "1" },
+    "payload": {
+      "session_id": "nograd-hot", "model": { "id": "claude-opus-4.8" },
+      "context_window": {
+        "current_context_tokens": 159000, "displayed_context_limit": 264000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "hide-compact",
+    "env": { "NO_COLOR": "1", "COPILOT_STATUSLINE_HIDE_COMPACT": "1" },
+    "payload": {
+      "session_id": "hide-compact", "model": { "id": "claude-opus-4.8" },
+      "context_window": {
+        "current_context_tokens": 159000, "displayed_context_limit": 264000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "warn-override",
+    "env": { "NO_COLOR": "1", "COPILOT_STATUSLINE_COMPACT_WARN": "0.6" },
+    "payload": {
+      "session_id": "warn-override", "model": { "id": "claude-opus-4.8" },
+      "context_window": {
+        "current_context_tokens": 130000, "displayed_context_limit": 264000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "output-tokens-override",
+    "env": { "NO_COLOR": "1", "COPILOT_STATUSLINE_OUTPUT_TOKENS": "64000" },
+    "payload": {
+      "session_id": "output-tokens-override", "model": { "id": "mai-code-1-flash-picker" },
+      "context_window": {
+        "current_context_tokens": 150000, "displayed_context_limit": 264000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "only-pct",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "session_id": "only-pct", "model": { "id": "claude-opus-4.8" },
+      "context_window": {
+        "current_context_used_percentage": 55, "displayed_context_limit": 264000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "minimal-noai",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "session_id": "minimal-noai", "model": { "id": "claude-opus-4.8" },
+      "context_window": {
+        "current_context_tokens": 80000, "displayed_context_limit": 264000,
+        "total_input_tokens": 0, "total_output_tokens": 0, "total_tokens": 0,
+        "total_cache_read_tokens": 0
+      }
+    }
+  },
+  {
+    "name": "no-model",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "session_id": "no-model",
+      "context_window": {
+        "current_context_tokens": 159000, "displayed_context_limit": 264000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "no-session",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "model": { "id": "claude-opus-4.8" },
+      "context_window": {
+        "current_context_tokens": 159000, "displayed_context_limit": 264000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "spike",
+    "env": { "NO_COLOR": "1" },
+    "spike": { "tool": "powershell", "tokens": 5014 },
+    "payload": {
+      "session_id": "spike", "model": { "id": "claude-opus-4.8" },
+      "context_window": {
+        "current_context_tokens": 80000, "displayed_context_limit": 264000,
+        "total_input_tokens": 500000, "total_output_tokens": 20000, "total_tokens": 520000,
+        "total_cache_read_tokens": 400000
+      },
+      "ai_used": { "formatted": "1.50", "total_nano_aiu": 1500000000 }
+    }
+  },
+  {
+    "name": "real-opus48-max",
+    "comment": "Sanitized capture of a real Copilot CLI 1.0.71 payload (personal paths + session id genericized; all field shapes preserved). Exercises the full contract: context_window_size (raw 1M) vs displayed_context_limit (264k tier), integer-formatted large AIC, and unknown extra fields the script must ignore.",
+    "env": { "NO_COLOR": "1" },
+    "payload": {
+      "cwd": "C:\\repo",
+      "session_id": "real-opus48-max",
+      "session_name": "captured session",
+      "transcript_path": "C:\\repo\\.copilot\\session-state\\real",
+      "model": { "id": "claude-opus-4.8", "display_name": "claude-opus-4.8 · max" },
+      "workspace": { "current_dir": "C:\\repo" },
+      "username": null,
+      "remote": { "connected": false },
+      "version": "1.0.71-0",
+      "cost": {
+        "total_api_duration_ms": 10219120, "total_lines_added": 2417,
+        "total_lines_removed": 114, "total_duration_ms": 36635064, "total_premium_requests": 375
+      },
+      "context_window": {
+        "total_input_tokens": 43130711, "total_output_tokens": 717448,
+        "total_cache_read_tokens": 39404682, "total_cache_write_tokens": 3688495,
+        "total_reasoning_tokens": 484491, "total_tokens": 43848159,
+        "context_window_size": 1000000, "used_percentage": 14, "remaining_percentage": 86,
+        "remaining_tokens": 858065, "last_call_input_tokens": 141538, "last_call_output_tokens": 397,
+        "current_context_tokens": 127108, "displayed_context_limit": 264000,
+        "current_context_used_percentage": 48,
+        "current_usage": {
+          "input_tokens": 43130711, "output_tokens": 717448,
+          "cache_creation_input_tokens": 3688495, "cache_read_input_tokens": 39404682
+        }
+      },
+      "ai_used": { "total_nano_aiu": 6914350225000, "formatted": "6914" },
+      "allow_all_enabled": true
+    }
+  }
+]

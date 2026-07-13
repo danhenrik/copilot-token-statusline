@@ -39,11 +39,17 @@ const { zonesFor, dangerFor } = require('./lib/zones');
 const { computeCompaction, compactionMarker } = require('./lib/compaction');
 const { spikeMarker } = require('./lib/spike');
 const { writeLedger } = require('./lib/ledger');
+const { dumpPayload } = require('./lib/debug');
 
 (async () => {
   let out = '';
   try {
     const raw = await readStdin();
+    const home =
+      process.env.COPILOT_HOME || path.join(os.homedir(), '.copilot');
+    // Optional: snapshot the raw payload for building test fixtures (no-op
+    // unless COPILOT_STATUSLINE_DEBUG_DUMP or a capture-next marker is set).
+    dumpPayload(home, raw);
     const s = JSON.parse(raw);
     const cw = s.context_window || {};
 
@@ -88,8 +94,6 @@ const { writeLedger } = require('./lib/ledger');
     })();
     const estUsd = aiuNum != null ? aiuNum * usdPerAic : null;
     const base = baseSgr();
-    const home =
-      process.env.COPILOT_HOME || path.join(os.homedir(), '.copilot');
 
     // The context segment now shows by default (turn off the built-in one via
     // footer.showContextWindow=false). Hide ours with

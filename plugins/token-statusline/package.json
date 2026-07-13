@@ -1,0 +1,11 @@
+{
+  "name": "copilot-token-statusline",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Per-session token/AI-credit status line for GitHub Copilot CLI",
+  "scripts": {
+    "test": "node --test test/statusline.test.js",
+    "test:update": "node tools/generate-goldens.js"
+  },
+  "license": "MIT"
+}
