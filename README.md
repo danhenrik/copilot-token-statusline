@@ -188,6 +188,7 @@ is thin and the reusable logic lives in `lib/`, each module with one job:
 
 ```
 plugins/token-statusline/
+├─ plugin.json           # Copilot CLI plugin manifest (contributes the setup skill)
 ├─ token-usage.js        # entry point: parse stdin → build segments → write ledger
 ├─ lib/
 │  ├─ format.js          # readStdin, fmt (compact token counts), envFlag
@@ -197,7 +198,8 @@ plugins/token-statusline/
 │  ├─ spike.js           # bridge to the token-spike extension's activity file
 │  ├─ ledger.js          # atomic per-session ledger writer
 │  └─ debug.js           # optional raw-payload capture (test-fixture helper)
-├─ install.js / uninstall.js
+├─ install.js / uninstall.js   # the trusted settings.json edit (+ install.ps1/.sh wrappers)
+├─ skills/token-statusline-setup/   # bundled skill that drives the install from a session
 ├─ test/                 # golden regression tests (node --test, zero deps)
 │  ├─ statusline.test.js #   the only auto-discovered test file
 │  ├─ cases.json         #   fixtures (incl. one sanitized real payload)
