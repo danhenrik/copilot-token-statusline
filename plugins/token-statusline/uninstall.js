@@ -77,4 +77,25 @@ if (fs.existsSync(destScript)) {
   }
 }
 
+// remove the companion token-spike extension if it was installed
+const extDir = path.join(home, 'extensions', 'token-spike');
+for (const f of ['extension.mjs', 'spike-core.mjs']) {
+  const p = path.join(extDir, f);
+  if (fs.existsSync(p)) {
+    if (dryRun) log('DRY RUN — would delete ' + p);
+    else {
+      fs.unlinkSync(p);
+      log('deleted ' + p);
+    }
+  }
+}
+if (!dryRun && fs.existsSync(extDir)) {
+  try {
+    fs.rmdirSync(extDir);
+    log('removed ' + extDir);
+  } catch (_) {
+    // directory not empty (user added files) -> leave it
+  }
+}
+
 log('done. Restart Copilot CLI (/restart) to apply.');

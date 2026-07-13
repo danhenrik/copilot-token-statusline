@@ -41,6 +41,8 @@ if (args.has('--help') || args.has('-h')) {
       '',
       '  --hide-builtin-context   set footer.showContextWindow=false (avoid double context)',
       '  --hide-builtin-aiused    set footer.showAiUsed=false',
+      '  --with-spike-extension   also install the token-spike extension (an',
+      '                           onPostToolUse hook that flags big tool outputs)',
       '  --dry-run, -n            show changes without writing',
       '  --help, -h               this help',
     ].join('\n')
@@ -51,6 +53,7 @@ if (args.has('--help') || args.has('-h')) {
 const dryRun = args.has('--dry-run') || args.has('-n');
 const hideCtx = args.has('--hide-builtin-context');
 const hideAiu = args.has('--hide-builtin-aiused');
+const withSpike = args.has('--with-spike-extension');
 
 function log() {
   const a = Array.prototype.slice.call(arguments);
@@ -109,6 +112,29 @@ if (!dryRun && fs.existsSync(settingsPath)) {
   log('backed up settings -> ' + bak);
 }
 
+// 4b) optionally install the companion token-spike extension. It runs an
+// onPostToolUse hook on every successful tool call, so it's opt-in: it records
+// large tool outputs to <COPILOT_HOME>/statusline/tool-activity/<session>.json,
+// which the status line reads to show a transient "spike" marker.
+const extDestDir = path.join(home, 'extensions', 'token-spike');
+if (withSpike) {
+  const extSrcDir = path.join(__dirname, 'extensions', 'token-spike');
+  const extFiles = ['extension.mjs', 'spike-core.mjs'];
+  const missing = extFiles.filter((f) => !fs.existsSync(path.join(extSrcDir, f)));
+  if (missing.length) {
+    die('cannot find bundled extension file(s): ' + missing.join(', ') + ' in ' + extSrcDir);
+  }
+  if (dryRun) {
+    log('DRY RUN — would install token-spike extension ->\n    ' + extDestDir);
+  } else {
+    fs.mkdirSync(extDestDir, { recursive: true });
+    for (const f of extFiles) {
+      fs.copyFileSync(path.join(extSrcDir, f), path.join(extDestDir, f));
+    }
+    log('installed token-spike extension -> ' + extDestDir);
+  }
+}
+
 // 5) patch settings (preserves all existing keys)
 const nodeCmd = 'node "' + destScript + '"';
 if (typeof settings.statusLine !== 'object' || settings.statusLine === null) {
@@ -136,6 +162,18 @@ if (dryRun) {
 }
 
 log('done. Restart Copilot CLI (/restart) to load the status line.');
+if (withSpike) {
+  log(
+    'token-spike installed: run /clear (or reload extensions) so the hook loads. ' +
+      'Tune it with COPILOT_STATUSLINE_SPIKE_TOKENS / COPILOT_STATUSLINE_SPIKE_WINDOW_MS; ' +
+      'hide the marker with COPILOT_STATUSLINE_HIDE_SPIKE=1.'
+  );
+} else {
+  log(
+    'tip: the "spike" marker (flags big tool outputs) needs the companion ' +
+      'extension — re-run with --with-spike-extension to enable it.'
+  );
+}
 if (!hideCtx) {
   log(
     'tip: the built-in footer also shows context usage. Re-run with ' +

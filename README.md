@@ -11,6 +11,7 @@ ctx 125k/200k (63%) | Σ3.4M (in 3.35M/out 50k) | cache 89% | 0.63 AIC ≈$0.01
 | `ctx 125k/200k (63%)` | Live `/context` occupancy. Colored **green → yellow → orange → red** by a per-model "dumb zone" gradient, so you can *see* when you're entering the range where models start to degrade. |
 | `Σ3.4M (in 3.35M/out 50k)` | Cumulative tokens that actually flowed through the API this session (input/output split) — the real cost driver, not the context size. |
 | `cache 89%` | Share of input tokens served from the prompt cache (cheap reads) vs freshly processed — an objective signal (no thresholds) that your stable prefix is being reused. |
+| `▲ read 42k` | *(optional)* Transient **"output strike"**: a big tool result just landed in context — the #1 source of bloat. Requires the companion **token-spike** extension; shows briefly, then clears on its own. |
 | `0.63 AIC ≈$0.01` | AI Credits used this session and an estimated USD cost (1 AI Credit ≈ $0.01). |
 
 It also writes a per-session ledger to `<COPILOT_HOME>/statusline/sessions/<session_id>.json`.
@@ -89,6 +90,7 @@ On Windows you can use the wrapper `install.ps1`; on macOS/Linux `install.sh`. B
 node install.js [options]
   --hide-builtin-context   also set footer.showContextWindow=false
   --hide-builtin-aiused    also set footer.showAiUsed=false
+  --with-spike-extension   also install the token-spike extension (flags big tool outputs)
   --dry-run, -n            print the changes without writing anything
   --help, -h               show help
 ```
@@ -108,6 +110,9 @@ The status-line script reads these at render time:
 | `COPILOT_STATUSLINE_HIDE_CUMULATIVE` | — | Set to `1` to hide the `Σ` cumulative segment. |
 | `COPILOT_STATUSLINE_HIDE_CONTEXT` | — | Set to `1` to hide the `ctx` segment. |
 | `COPILOT_STATUSLINE_HIDE_CACHE` | — | Set to `1` to hide the `cache %` segment. |
+| `COPILOT_STATUSLINE_HIDE_SPIKE` | — | Set to `1` to hide the `▲` output-strike marker. |
+| `COPILOT_STATUSLINE_SPIKE_TOKENS` | `8000` | Min approx tokens for a tool result to count as a "spike" (needs the token-spike extension). |
+| `COPILOT_STATUSLINE_SPIKE_WINDOW_MS` | `90000` | How long (ms) the `▲` marker stays visible after a spike. |
 | `COPILOT_STATUSLINE_NO_GRADIENT` | — | Set to `1` to disable the color gradient (grey ctx). |
 | `COPILOT_STATUSLINE_COLOR` | `auto` | Base color of the ordinary status text. `none`/`off` disables color; `auto`/`github`/`dark` = grey `#9198A1`; `light` = `#59636e`; `dim` = faint; or a bare SGR / `R;G;B` triple. |
 | `NO_COLOR` | — | Standard: any non-empty value disables color. |
@@ -123,6 +128,28 @@ The `ctx` color reflects how close the session is to the range where model quali
 **Provenance (honest):** the *general* thresholds are corroborated across many independent studies — RULER, Chroma "Context Rot", NoLiMa, "Lost in the Middle", and Anthropic's context-engineering guidance (onset commonly ~32k, effective context often ~⅓–½ of advertised, coding degradation hits earliest). The *specific per-model* anchors in `token-usage.js` are an **extrapolation** of those ranges scaled by each family's generation/long-context reputation — not a direct measurement of these exact models. Unmatched/unknown models fall back to a **window-relative** default (`min(50%×window, 128k)` smart, `min(90%×window, 400k)` dumb). They're tunable via `COPILOT_STATUSLINE_ZONES`.
 
 **→ Full sources, per-family reasoning, and the extrapolation method are documented in [THRESHOLDS.md](./THRESHOLDS.md).**
+
+---
+
+## The token-spike extension (optional)
+
+The status line can only see **aggregate** context size — never the size of an individual tool result. But tool outputs (a huge file read, a long command dump, a big search) are the **#1 source of context bloat**, and by the time they show up in the aggregate it's easy to miss *what* caused the jump.
+
+`token-spike` closes that gap. It's a tiny Copilot CLI **extension** (an `onPostToolUse` hook) that measures every successful tool result and records the big ones to a shared file:
+
+```
+<COPILOT_HOME>/statusline/tool-activity/<session_id>.json
+```
+
+The status line reads that file and shows a transient `▲ <tool> <tokens>` marker right after a large output lands, so you notice the hit and can decide whether to prune, summarize, or hand off before it degrades the context. The marker clears itself after `COPILOT_STATUSLINE_SPIKE_WINDOW_MS` (default 90 s).
+
+It's **opt-in** because a hook runs on every tool call. Enable it with:
+
+```shell
+node plugins/token-statusline/install.js --with-spike-extension
+```
+
+That copies the extension to `~/.copilot/extensions/token-spike/`. Run **`/clear`** (or reload extensions) so the CLI picks it up. Token sizes are an approximate `chars ÷ 4` estimate — good enough to spot a strike, not billing-grade. Tune the trigger with `COPILOT_STATUSLINE_SPIKE_TOKENS` (default 8000) and hide the marker with `COPILOT_STATUSLINE_HIDE_SPIKE=1`. The uninstaller removes it automatically.
 
 ---
 

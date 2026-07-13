@@ -88,7 +88,7 @@ function paint(text, sgr) {
 // PROVENANCE: the GENERAL ranges above are corroborated across many independent
 // studies — RULER (17 models; effective context often ~50% for the best, ~1/3 on
 // hard tasks; GPT-4 128k->64k, Claude 3 Opus 200k->~32-64k, Yi-34B 200k->32k),
-// Chroma "Context Rot" (18 models, Jun 2025; coding worst-hit), NoLiMa (11/13
+// Chroma "Context Rot" (18 models, Jun 2025; coding worst-hit), NoLiMa (10/12
 // models <50% by 32k), Lost-in-the-Middle (Liu et al.), HumanLayer's coding-agent
 // context-engineering talk (practitioner: compact before ~50-100k), and
 // Anthropic's context-engineering guide. The specific
@@ -227,6 +227,8 @@ function dangerSgr(d) {
     })();
     const estUsd = aiuNum != null ? aiuNum * usdPerAic : null;
     const base = baseSgr();
+    const home =
+      process.env.COPILOT_HOME || path.join(os.homedir(), '.copilot');
 
     // The context segment now shows by default (turn off the built-in one via
     // footer.showContextWindow=false). Hide ours with
@@ -267,6 +269,41 @@ function dangerSgr(d) {
             ? dangerSgr(danger)
             : base;
         segs.push(paint(seg, sgr));
+      }
+    }
+    // Transient "output strike" marker. The companion token-spike extension
+    // (an onPostToolUse hook) records big tool results — the #1 source of
+    // context bloat, and something this status line can't see on its own — to a
+    // shared activity file. We surface the most recent spike briefly so you
+    // notice the hit and can decide whether to prune/handoff. Objective size
+    // (approx tokens), no dumb-zone thresholds. Hide with
+    // COPILOT_STATUSLINE_HIDE_SPIKE=1; adjust how long it stays visible with
+    // COPILOT_STATUSLINE_SPIKE_WINDOW_MS (default 90000).
+    const hideSpike = /^(1|true|yes|on)$/i.test(
+      process.env.COPILOT_STATUSLINE_HIDE_SPIKE || ''
+    );
+    if (!hideSpike && s.session_id) {
+      try {
+        const safe = String(s.session_id).replace(/[^A-Za-z0-9._-]/g, '_');
+        const af = path.join(home, 'statusline', 'tool-activity', `${safe}.json`);
+        const act = JSON.parse(fs.readFileSync(af, 'utf8'));
+        const sp = act && act.spike;
+        if (sp && typeof sp.at === 'number') {
+          const winMs = (() => {
+            const v = parseInt(
+              process.env.COPILOT_STATUSLINE_SPIKE_WINDOW_MS || '',
+              10
+            );
+            return Number.isFinite(v) && v > 0 ? v : 90000;
+          })();
+          if (Date.now() - sp.at <= winMs) {
+            const sgr = colorEnabled() && !noGradient ? dangerSgr(0.72) : base;
+            const tool = String(sp.tool || 'tool').slice(0, 16);
+            segs.push(paint(`\u25B2 ${tool} ${fmt(sp.tokens)}`, sgr));
+          }
+        }
+      } catch (_) {
+        // No activity file (extension not installed / no recent spike) -> no marker.
       }
     }
     // Cumulative tokens billed through the API this session — input + output
@@ -320,8 +357,6 @@ function dangerSgr(d) {
     out = segs.join(paint(' | ', base));
 
     if (s.session_id) {
-      const home =
-        process.env.COPILOT_HOME || path.join(os.homedir(), '.copilot');
       const dir = path.join(home, 'statusline', 'sessions');
       fs.mkdirSync(dir, { recursive: true });
       const rec = {
