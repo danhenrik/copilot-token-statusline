@@ -111,7 +111,7 @@ The status-line script reads these at render time:
 | `COPILOT_STATUSLINE_HIDE_CONTEXT` | — | Set to `1` to hide the `ctx` segment. |
 | `COPILOT_STATUSLINE_HIDE_CACHE` | — | Set to `1` to hide the `cache %` segment. |
 | `COPILOT_STATUSLINE_HIDE_SPIKE` | — | Set to `1` to hide the `▲` output-strike marker. |
-| `COPILOT_STATUSLINE_SPIKE_TOKENS` | `8000` | Min approx tokens for a tool result to count as a "spike" (needs the token-spike extension). |
+| `COPILOT_STATUSLINE_SPIKE_TOKENS` | `4000` | Min approx tokens for a tool result to count as a "spike" (needs the token-spike extension). |
 | `COPILOT_STATUSLINE_SPIKE_WINDOW_MS` | `90000` | How long (ms) the `▲` marker stays visible after a spike. |
 | `COPILOT_STATUSLINE_NO_GRADIENT` | — | Set to `1` to disable the color gradient (grey ctx). |
 | `COPILOT_STATUSLINE_COLOR` | `auto` | Base color of the ordinary status text. `none`/`off` disables color; `auto`/`github`/`dark` = grey `#9198A1`; `light` = `#59636e`; `dim` = faint; or a bare SGR / `R;G;B` triple. |
@@ -149,7 +149,9 @@ It's **opt-in** because a hook runs on every tool call. Enable it with:
 node plugins/token-statusline/install.js --with-spike-extension
 ```
 
-That copies the extension to `~/.copilot/extensions/token-spike/`. Run **`/clear`** (or reload extensions) so the CLI picks it up. Token sizes are an approximate `chars ÷ 4` estimate — good enough to spot a strike, not billing-grade. Tune the trigger with `COPILOT_STATUSLINE_SPIKE_TOKENS` (default 8000) and hide the marker with `COPILOT_STATUSLINE_HIDE_SPIKE=1`. The uninstaller removes it automatically.
+That copies the extension to `~/.copilot/extensions/token-spike/`. Run **`/clear`** (or reload extensions) so the CLI picks it up. Token sizes are an approximate `chars ÷ 4` estimate — good enough to spot a strike, not billing-grade. Tune the trigger with `COPILOT_STATUSLINE_SPIKE_TOKENS` (default 4000) and hide the marker with `COPILOT_STATUSLINE_HIDE_SPIKE=1`. The uninstaller removes it automatically.
+
+> **Calibration note:** Copilot CLI already truncates very large tool results to a short preview (offloading the full text to a temp file), so a single result contributes at most ~5–7k tokens to the context before that kicks in — which is why the default threshold is 4000, not higher. Usefully, this means the marker measures your *real* context contribution: a 250 KB command that gets truncated to a ~900-char preview correctly does **not** count as a spike, because it didn't actually bloat your window.
 
 ---
 

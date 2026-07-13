@@ -16,11 +16,17 @@
 import { joinSession } from '@github/copilot-sdk/extension';
 import { recordToolUse } from './spike-core.mjs';
 
-await joinSession({
+// Captured from the session object as a fallback in case a future runtime
+// stops passing invocation.sessionId to the hook.
+let sessionId;
+const session = await joinSession({
   hooks: {
     // Pure observation — we never modify the tool result (return nothing).
     onPostToolUse: async (input, invocation) => {
-      recordToolUse(input, invocation);
+      recordToolUse(input, {
+        sessionId: (invocation && invocation.sessionId) || sessionId,
+      });
     },
   },
 });
+sessionId = session.sessionId;

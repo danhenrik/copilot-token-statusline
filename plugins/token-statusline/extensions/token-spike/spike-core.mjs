@@ -12,11 +12,15 @@ const ACT_DIR = path.join(HOME, 'statusline', 'tool-activity');
 const MAX_HISTORY = 50;
 
 // A tool result at/above this many (approx) tokens is a "spike" worth flagging.
-// Tool outputs are the #1 source of context bloat, so a single large dump is
-// exactly what a user managing their window wants to notice. Tunable.
+// Tool outputs are the #1 source of context bloat. Note: Copilot CLI truncates
+// very large tool results to a short preview (offloading the full text to a temp
+// file), so a single result contributes at most ~5-7k tokens to the context
+// before that kicks in — anything bigger doesn't actually bloat the window. The
+// 4000 default sits in the "large but still fully in-context" band, flagging the
+// genuinely heavy results without firing on routine ones. Tunable.
 export function spikeThreshold() {
   const v = parseInt(process.env.COPILOT_STATUSLINE_SPIKE_TOKENS || '', 10);
-  return Number.isFinite(v) && v > 0 ? v : 8000;
+  return Number.isFinite(v) && v > 0 ? v : 4000;
 }
 
 // Rough chars/4 heuristic — good enough to spot a big strike, not billing-grade.
