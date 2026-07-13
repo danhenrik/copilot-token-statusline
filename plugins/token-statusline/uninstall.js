@@ -7,7 +7,8 @@
  * Reverts what install.js did, conservatively:
  *   - footer.showCustom -> false
  *   - removes statusLine only if its command points at our token-usage.js
- *   - deletes the installed <COPILOT_HOME>/statusline/token-usage.js
+ *   - deletes the installed <COPILOT_HOME>/statusline/token-usage.js and its
+ *     lib/ modules
  *
  * It never deletes settings keys it doesn't recognise. A settings.json.bak is
  * written before changes.
@@ -30,6 +31,7 @@ function log() {
 
 const home = process.env.COPILOT_HOME || path.join(os.homedir(), '.copilot');
 const destScript = path.join(home, 'statusline', 'token-usage.js');
+const destLib = path.join(home, 'statusline', 'lib');
 const settingsPath = path.join(home, 'settings.json');
 
 if (fs.existsSync(settingsPath)) {
@@ -74,6 +76,15 @@ if (fs.existsSync(destScript)) {
   else {
     fs.unlinkSync(destScript);
     log('deleted ' + destScript);
+  }
+}
+
+// delete the installed lib/ modules that ship with the status-line script
+if (fs.existsSync(destLib)) {
+  if (dryRun) log('DRY RUN — would delete ' + destLib);
+  else {
+    fs.rmSync(destLib, { recursive: true, force: true });
+    log('deleted ' + destLib);
   }
 }
 

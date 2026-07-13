@@ -66,7 +66,10 @@ On Windows you can use the wrapper `install.ps1`; on macOS/Linux `install.sh`. B
 
 ### Option D — Fully manual
 
-1. Copy `plugins/token-statusline/token-usage.js` to `~/.copilot/statusline/token-usage.js`.
+1. Copy `plugins/token-statusline/token-usage.js` **and its `lib/` folder** to
+   `~/.copilot/statusline/` (the script `require()`s `./lib/*`, so the modules
+   must sit next to it — e.g. `~/.copilot/statusline/token-usage.js` and
+   `~/.copilot/statusline/lib/`).
 2. In `~/.copilot/settings.json` add:
    ```json
    "statusLine": {
@@ -174,6 +177,31 @@ That copies the extension to `~/.copilot/extensions/token-spike/`. Run **`/clear
 node plugins/token-statusline/uninstall.js     # reverts settings.json + removes the installed script
 copilot plugin uninstall token-statusline      # if installed as a plugin
 ```
+
+---
+
+## Project layout
+
+The status line is plain Node (no build step, no dependencies). The entry point
+is thin and the reusable logic lives in `lib/`, each module with one job:
+
+```
+plugins/token-statusline/
+├─ token-usage.js        # entry point: parse stdin → build segments → write ledger
+├─ lib/
+│  ├─ format.js          # readStdin, fmt (compact token counts), envFlag
+│  ├─ color.js           # NO_COLOR handling, base grey, danger gradient, gradientSgr
+│  ├─ zones.js           # per-model "dumb zone" map + danger score (0..1)
+│  ├─ compaction.js      # recover promptTokenLimit + the ⚠ near-compaction marker
+│  ├─ spike.js           # bridge to the token-spike extension's activity file
+│  └─ ledger.js          # atomic per-session ledger writer
+├─ install.js / uninstall.js
+└─ extensions/token-spike/   # optional onPostToolUse hook (big-output detector)
+```
+
+`token-usage.js` `require()`s `./lib/*` relative to its own location, so it runs
+correctly from any working directory — but the `lib/` folder **must** be
+deployed next to it (the installer copies both into `~/.copilot/statusline/`).
 
 ---
 

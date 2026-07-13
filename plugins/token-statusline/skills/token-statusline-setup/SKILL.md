@@ -40,9 +40,10 @@ Do the following:
    - add `--hide-builtin-context` if the user chose to hide the built-in one.
    - add `--dry-run` first if the user wants to preview changes.
 
-   The installer copies `token-usage.js` into `<COPILOT_HOME>/statusline/` and
-   edits `<COPILOT_HOME>/settings.json` (a `settings.json.bak` backup is made
-   first). `COPILOT_HOME` defaults to `~/.copilot`.
+   The installer copies `token-usage.js` and its `lib/` modules into
+   `<COPILOT_HOME>/statusline/` and edits `<COPILOT_HOME>/settings.json` (a
+   `settings.json.bak` backup is made first). `COPILOT_HOME` defaults to
+   `~/.copilot`.
 
 4. **Report the result** and tell the user to run `/restart` so the CLI reloads
    the status line. Confirm `footer.showCustom` is `true` (the installer sets

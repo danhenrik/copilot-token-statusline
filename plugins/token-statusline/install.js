@@ -5,8 +5,8 @@
  * Installer for the "token-statusline" Copilot CLI custom status line.
  *
  * Cross-platform (pure Node — no jq/PowerShell modules needed). It:
- *   1. Copies token-usage.js (bundled next to this installer) into
- *      <COPILOT_HOME>/statusline/token-usage.js
+ *   1. Copies token-usage.js and its lib/ modules (bundled next to this
+ *      installer) into <COPILOT_HOME>/statusline/
  *   2. Wires it into <COPILOT_HOME>/settings.json:
  *        statusLine.type    = "command"
  *        statusLine.command = node "<installed script path>"
@@ -68,11 +68,16 @@ const home = process.env.COPILOT_HOME || path.join(os.homedir(), '.copilot');
 const statusDir = path.join(home, 'statusline');
 const destScript = path.join(statusDir, 'token-usage.js');
 const srcScript = path.join(__dirname, 'token-usage.js');
+const destLib = path.join(statusDir, 'lib');
+const srcLib = path.join(__dirname, 'lib');
 const settingsPath = path.join(home, 'settings.json');
 
-// 1) locate bundled script
+// 1) locate bundled script + its lib/ modules
 if (!fs.existsSync(srcScript)) {
   die('cannot find bundled token-usage.js next to this installer (' + srcScript + ').');
+}
+if (!fs.existsSync(srcLib)) {
+  die('cannot find bundled lib/ modules next to this installer (' + srcLib + ').');
 }
 
 // 2) load + validate existing settings before touching anything
@@ -96,13 +101,19 @@ if (fs.existsSync(settingsPath)) {
   }
 }
 
-// 3) copy the status-line script
+// 3) copy the status-line script + its lib/ modules. The entry point
+// require()s ./lib/* relative to itself, so the modules must ship alongside it.
+// lib/ is replaced wholesale so a stale module from a prior version can't linger.
 if (dryRun) {
   log('DRY RUN — would copy\n    ' + srcScript + '\n  ->' + destScript);
+  log('DRY RUN — would copy lib/ modules\n    ' + srcLib + '\n  ->' + destLib);
 } else {
   fs.mkdirSync(statusDir, { recursive: true });
   fs.copyFileSync(srcScript, destScript);
+  fs.rmSync(destLib, { recursive: true, force: true });
+  fs.cpSync(srcLib, destLib, { recursive: true });
   log('copied status-line script -> ' + destScript);
+  log('copied lib/ modules -> ' + destLib);
 }
 
 // 4) back up settings
