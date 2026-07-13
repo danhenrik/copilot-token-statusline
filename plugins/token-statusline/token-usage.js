@@ -77,8 +77,9 @@ function paint(text, sgr) {
 // reasoning silently degrade well before the advertised context limit — the
 // "dumb zone" / "context rot". Onset tracks an ABSOLUTE token count more than a
 // % of the window:
-//   - Coding agents: error rates & premature quits spike past ~50k-100k working
-//     tokens (HumanLayer ~100k-session analysis; Chroma "Context Rot", Jun 2025).
+//   - Coding agents: practitioner guidance is to compact well before the window
+//     fills (~50k-100k working tokens; HumanLayer's coding-agent context-
+//     engineering talk). Chroma "Context Rot" (Jun 2025) finds coding worst-hit.
 //   - RULER: effective context ~1/3 of advertised; reasoning-heavy ~10-20%.
 //   - "Lost in the Middle" (Liu et al.) + NoLiMa: recall craters by ~32k even
 //     for strong models once lexical cues are removed.
@@ -87,9 +88,10 @@ function paint(text, sgr) {
 // PROVENANCE: the GENERAL ranges above are corroborated across many independent
 // studies — RULER (17 models; effective context often ~50% for the best, ~1/3 on
 // hard tasks; GPT-4 128k->64k, Claude 3 Opus 200k->~32-64k, Yi-34B 200k->32k),
-// Chroma "Context Rot" (18 models, Jun 2025), NoLiMa (11/13 models <50% by 32k),
-// Lost-in-the-Middle (Liu et al.), HumanLayer (~100k coding sessions: quits spike
-// past 50-100k), and Anthropic's context-engineering guide. The specific
+// Chroma "Context Rot" (18 models, Jun 2025; coding worst-hit), NoLiMa (11/13
+// models <50% by 32k), Lost-in-the-Middle (Liu et al.), HumanLayer's coding-agent
+// context-engineering talk (practitioner: compact before ~50-100k), and
+// Anthropic's context-engineering guide. The specific
 // per-FAMILY numbers below are NOT a direct measurement of these exact 2026
 // models (public benchmarks tested older gens); they are an EXTRAPOLATION of the
 // recurring ranges scaled by each family's generation/long-context reputation.

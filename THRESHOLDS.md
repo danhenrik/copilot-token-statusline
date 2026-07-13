@@ -22,6 +22,7 @@ An LLM's accuracy, instruction‑following, and reasoning degrade as the context
 | **Lost in the Middle** — Liu et al., 2023 (TACL). [arXiv:2307.03172](https://arxiv.org/abs/2307.03172) | Position matters: a "U‑shaped" curve — info at the start/end is recalled; info in the middle is missed. | Sharp mid‑context recall drop in long inputs. |
 | **Context Rot** — Chroma Research, 2025. [Report](https://www.trychroma.com/research/context-rot) | 18 current models (GPT‑4.1, Claude 4, Gemini 2.5, Qwen3). Holds task difficulty constant and varies *only* input length. | **All 18 degrade** as length grows; degradation starts **well below** the max window; **multi‑step / coding agents are hit hardest**. |
 | **Effective context engineering for AI agents** — Anthropic, Sep 29 2025. [Post](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) | Treats context as a finite "attention budget"; curating/compacting beats stuffing the window. | Qualitative; motivates compaction well before the limit. |
+| **Advanced Context Engineering for Coding Agents** — D. Horthy, HumanLayer, 2025 *(industry talk)*. | Practitioner guidance for **coding agents specifically**: compact/route context and delegate to sub‑agents *well before* the window fills. | Heuristic (not a benchmark): compact around **~50–100k** working tokens. |
 
 **Convergent conclusion (the part I'm confident in):**
 1. Degradation **onset** is commonly around **~32k** tokens and is **gradual** from there.
@@ -37,7 +38,7 @@ An LLM's accuracy, instruction‑following, and reasoning degrade as the context
 | --- | --- |
 | "Degradation begins ~32k and is gradual" | **Measured** (NoLiMa, Lost‑in‑the‑Middle) |
 | "Effective ≈ ½ (best) to ⅓ (hard) of the window" | **Measured** (RULER) |
-| "Doesn't scale with window size; coding worst" | **Measured / strongly supported** (Chroma, Anthropic) |
+| "Doesn't scale with window size; coding worst" | **Measured / strongly supported** (Chroma, Anthropic, HumanLayer) |
 | **Exact per‑family `smartUntil`/`dumbFrom` integers** | **Extrapolated** — mapping each 2026 family to the nearest measured reference class, scaled by generation & long‑context reputation. **Not** a direct benchmark of these models. |
 | Relative ordering of families | **Reasoned** (follows model size/class trends seen in RULER, where smaller models had shorter effective lengths) |
 
@@ -126,3 +127,4 @@ If you have **measured** dumb‑zone data for any of these exact 2026 models, pl
 - Liu et al., *Lost in the Middle: How Language Models Use Long Contexts*, TACL, 2023. https://arxiv.org/abs/2307.03172
 - Chroma Research, *Context Rot: How Increasing Input Tokens Impacts LLM Performance*, 2025. https://www.trychroma.com/research/context-rot
 - Anthropic, *Effective context engineering for AI agents*, Sep 29 2025. https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
+- Dexter Horthy (HumanLayer), *Advanced Context Engineering for Coding Agents*, 2025 — industry talk (practitioner guidance, not a peer‑reviewed benchmark).
