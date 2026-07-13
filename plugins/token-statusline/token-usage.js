@@ -179,6 +179,54 @@ function dangerSgr(d) {
   return `38;2;${rgb[0]};${rgb[1]};${rgb[2]}`;
 }
 
+// ---- Near auto-compaction headroom ----------------------------------------
+// The CLI compacts the LIVE context at objective fractions of the model's
+// PROMPT budget (promptTokenLimit) -- NOT of the displayed window. Constants
+// read straight from the CLI's native addon (runtime.node, 1.0.71):
+//   0.75 static-context warning . 0.80 background auto-compaction
+//   0.85 static-context block   . 0.95 buffer exhaustion (hard ceiling)
+// and confirmed in app.js contextInfo(): compactionThreshold =
+// floor(promptTokenLimit * 0.80); limit(displayed) = promptTokenLimit +
+// outputTokenLimit; bufferTokens = outputTokenLimit + floor(promptTokenLimit *
+// 0.05). We recover promptTokenLimit = displayed_context_limit -
+// outputTokenLimit(model), which is tier-correct (the payload's displayed limit
+// already reflects the active tier; outputTokenLimit is ~constant per model).
+// The marker counts down to the 0.80 background compaction -- the first
+// threshold that actually reclaims space. See THRESHOLDS.md.
+const COMPACT_AT = 0.8; // contextBackgroundCompactionThreshold()
+function compactWarnRatio() {
+  // When the marker starts showing, as a fraction of promptTokenLimit. Default
+  // 0.75 (the CLI's own static-context warning stage). Must be < COMPACT_AT.
+  const v = parseFloat(process.env.COPILOT_STATUSLINE_COMPACT_WARN);
+  return Number.isFinite(v) && v > 0 && v < COMPACT_AT ? v : 0.75;
+}
+
+// Per-model max_output_tokens (default tier) -- the ONLY unknown needed to turn
+// the displayed window into promptTokenLimit. Sourced from the CLI's native
+// catalog (catalogLookupModelLimits) and, for models it resolves from the API,
+// from the "Applied model capabilities" lines in ~/.copilot/logs/process-*.log.
+// Most-specific patterns first. Unknown/future models -> null (marker hidden,
+// never guessed); override those with COPILOT_STATUSLINE_OUTPUT_TOKENS.
+const OUTPUT_TOKENS = [
+  [/codex/, 128000], // gpt-5.3-codex
+  [/gpt-?5[.\-]\d/, 128000], // gpt-5.3/5.4/5.5/5.6 (+ their -mini/-nano)
+  [/gpt-?5[ _-]?mini/, 64000], // plain gpt-5-mini (no minor version)
+  [/gpt-?5/, 128000], // other gpt-5.x
+  [/haiku/, 64000],
+  [/opus-?4[.\-]?(7|8)|opus-?[5-9]/, 64000], // opus 4.7/4.8 and >=5
+  [/opus/, 32000], // opus 4.6 and older
+  [/sonnet-?(5|[6-9])/, 64000], // sonnet 5 and newer
+  [/sonnet/, 32000], // sonnet 4.x
+  [/gemini/, 64000], // gemini 3.1 pro + 3.5 flash (both contain "gemini")
+];
+function outputTokensFor(modelId) {
+  const ov = parseInt(process.env.COPILOT_STATUSLINE_OUTPUT_TOKENS || '', 10);
+  if (Number.isFinite(ov) && ov >= 0) return ov;
+  const id = String(modelId || '').toLowerCase();
+  for (const [re, n] of OUTPUT_TOKENS) if (re.test(id)) return n;
+  return null; // unknown model -> caller hides the marker (never guesses)
+}
+
 (async () => {
   let out = '';
   try {
@@ -269,6 +317,45 @@ function dangerSgr(d) {
             ? dangerSgr(danger)
             : base;
         segs.push(paint(seg, sgr));
+      }
+    }
+    // Near auto-compaction headroom. Counts live context down to the 0.80
+    // background-compaction point (floor(promptTokenLimit * 0.80)), where the CLI
+    // silently compacts to reclaim space. promptTokenLimit is recovered per
+    // model/tier as displayed_context_limit - outputTokenLimit(model) -- NOT a
+    // flat % of the displayed window (the reserved buffer is 11-37% of it,
+    // depending on tier, so displayed-% would be wrong). Shown only in the final
+    // stretch before compaction (>= COMPACT_WARN * promptTokenLimit). Hide with
+    // COPILOT_STATUSLINE_HIDE_COMPACT=1.
+    const hideCompact = /^(1|true|yes|on)$/i.test(
+      process.env.COPILOT_STATUSLINE_HIDE_COMPACT || ''
+    );
+    let promptLimit = null,
+      compactAt = null,
+      compactHead = null;
+    if (ctxCur != null) {
+      // Use displayed_context_limit ONLY (tier-correct); the context_window_size
+      // fallback is the raw model window and would break the derivation.
+      const displayedLimit = cw.displayed_context_limit;
+      const outLimit = outputTokensFor(modelId);
+      if (displayedLimit > 0 && outLimit != null && displayedLimit > outLimit) {
+        promptLimit = displayedLimit - outLimit;
+        compactAt = Math.floor(promptLimit * COMPACT_AT);
+        compactHead = compactAt - ctxCur;
+      }
+    }
+    if (!hideCompact && compactAt != null) {
+      const warnAt = Math.floor(promptLimit * compactWarnRatio());
+      if (ctxCur >= warnAt) {
+        const label =
+          compactHead > 0 ? `\u26A0 compact ${fmt(compactHead)}` : '\u26A0 compacting';
+        // Escalate mild -> red across warn..target; hard red once past target.
+        let d = 1;
+        if (ctxCur < compactAt) {
+          d = 0.4 + 0.6 * ((ctxCur - warnAt) / Math.max(1, compactAt - warnAt));
+        }
+        const sgr = colorEnabled() && !noGradient ? dangerSgr(Math.min(1, d)) : base;
+        segs.push(paint(label, sgr));
       }
     }
     // Transient "output strike" marker. The companion token-spike extension
@@ -374,6 +461,11 @@ function dangerSgr(d) {
         dumb_zone_smart_until: zone ? zone.smartUntil : null,
         dumb_zone_from: zone ? zone.dumbFrom : null,
         dumb_zone_danger: danger != null ? Math.round(danger * 100) / 100 : null,
+        // Near auto-compaction: promptTokenLimit (recovered), the 0.80 target,
+        // and live headroom to it. Null when the model's output limit is unknown.
+        compaction_prompt_limit: promptLimit,
+        compaction_at: compactAt,
+        compaction_headroom: compactHead,
         // Cumulative billed usage across all calls this session.
         cumulative_input_tokens: inTok,
         cumulative_output_tokens: outTok,

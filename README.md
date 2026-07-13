@@ -109,6 +109,9 @@ The status-line script reads these at render time:
 | `COPILOT_STATUSLINE_HIDE_USD` | — | Set to `1` to hide the `≈$` cost estimate. |
 | `COPILOT_STATUSLINE_HIDE_CUMULATIVE` | — | Set to `1` to hide the `Σ` cumulative segment. |
 | `COPILOT_STATUSLINE_HIDE_CONTEXT` | — | Set to `1` to hide the `ctx` segment. |
+| `COPILOT_STATUSLINE_HIDE_COMPACT` | — | Set to `1` to hide the `⚠ compact` near-auto-compaction marker. |
+| `COPILOT_STATUSLINE_COMPACT_WARN` | `0.75` | Fraction of the prompt budget at which the `⚠ compact` marker starts showing (must be < `0.80`). |
+| `COPILOT_STATUSLINE_OUTPUT_TOKENS` | — | Override the model's max output tokens, used to recover the prompt budget for the compaction marker (only needed for unknown/future models). |
 | `COPILOT_STATUSLINE_HIDE_CACHE` | — | Set to `1` to hide the `cache %` segment. |
 | `COPILOT_STATUSLINE_HIDE_SPIKE` | — | Set to `1` to hide the `▲` output-strike marker. |
 | `COPILOT_STATUSLINE_SPIKE_TOKENS` | `4000` | Min approx tokens for a tool result to count as a "spike" (needs the token-spike extension). |
@@ -128,6 +131,16 @@ The `ctx` color reflects how close the session is to the range where model quali
 **Provenance (honest):** the *general* thresholds are corroborated across many independent studies — RULER, Chroma "Context Rot", NoLiMa, "Lost in the Middle", and Anthropic's context-engineering guidance (onset commonly ~32k, effective context often ~⅓–½ of advertised, coding degradation hits earliest). The *specific per-model* anchors in `token-usage.js` are an **extrapolation** of those ranges scaled by each family's generation/long-context reputation — not a direct measurement of these exact models. Unmatched/unknown models fall back to a **window-relative** default (`min(50%×window, 128k)` smart, `min(90%×window, 400k)` dumb). They're tunable via `COPILOT_STATUSLINE_ZONES`.
 
 **→ Full sources, per-family reasoning, and the extrapolation method are documented in [THRESHOLDS.md](./THRESHOLDS.md).**
+
+---
+
+## The auto-compaction alert (`⚠ compact`)
+
+As the live context nears the point where Copilot CLI **auto-compacts** it, the status line shows a `⚠ compact <headroom>` marker — the tokens left before compaction fires (e.g. `⚠ compact 8k`). Cross it and it reads `⚠ compacting`. It only appears in the final stretch (default: from 75% of the prompt budget) and escalates yellow → red as you close in. Hide it with `COPILOT_STATUSLINE_HIDE_COMPACT=1`.
+
+**Unlike the dumb-zone gradient, this is measured directly from the CLI binary — not extrapolated.** Compaction fires at `0.80 × promptTokenLimit`, and because the reserved output buffer makes that anywhere from **11% to 37% of the displayed window depending on model/tier**, a flat "% of window" would be wrong. The script recovers `promptTokenLimit = displayed_context_limit − outputTokenLimit(model)` per model/tier, so the countdown is always tier-correct. For models whose output limit isn't known it simply shows nothing (never a guess).
+
+**→ The exact constants, the `app.js` / native-addon sources, the buffer geometry, and the per-model output-token table are in [THRESHOLDS.md](./THRESHOLDS.md) §8.**
 
 ---
 

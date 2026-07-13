@@ -1,6 +1,9 @@
-# Dumb‑zone thresholds: sources & rationale
+# Thresholds: sources & rationale
 
-This document explains **where the numbers in [`token-usage.js`](./plugins/token-statusline/token-usage.js) come from** — specifically the per‑model "dumb zone" anchors that drive the green → yellow → orange → red color of the `ctx` segment — and, just as importantly, **which parts are measured and which are extrapolated.**
+This document explains **where the numbers in [`token-usage.js`](./plugins/token-statusline/token-usage.js) come from** and, just as importantly, **which parts are measured and which are extrapolated.** It covers two very different sets of numbers:
+
+- **§1–§7 — the "dumb zone" anchors** that drive the green → yellow → orange → red color of the `ctx` segment. These are an honest **extrapolation** from published research.
+- **§8 — the auto-compaction marker** (`⚠ compact`). These are **measured directly from the Copilot CLI binary** (native addon + app bundle) and are exact — a deliberate contrast to §1–§7.
 
 ## TL;DR (the honest version)
 
@@ -117,6 +120,98 @@ The `AIC` figure and its `≈$` estimate are documented in the script header. In
 - **Stricter (research‑literal) preset** you may prefer, closer to NoLiMa/coding onsets: `smartUntil = min(⅓×window, 64k)`, `dumbFrom = min(60%×window, 160k)`.
 
 If you have **measured** dumb‑zone data for any of these exact 2026 models, please open an issue/PR — measured values should replace the extrapolated ones here.
+
+---
+
+## 8. Auto‑compaction thresholds — the `⚠ compact` marker (measured, not extrapolated)
+
+Everything above (§1–§7) is an honest **extrapolation**. This section is the opposite: the numbers are **read straight out of the Copilot CLI itself** (v1.0.71) — the native runtime addon and the app bundle — so they are exact, not guesses.
+
+### 8.1 The four stages (from the native addon)
+
+The CLI's native addon (`runtime.node`) exports the compaction thresholds as plain nullary functions. Calling them directly returns:
+
+| Native export | Value | Meaning |
+| --- | ---: | --- |
+| `compactionStaticContextWarningThreshold()` | **0.75** | static‑context warning |
+| `contextBackgroundCompactionThreshold()` | **0.80** | **background auto‑compaction fires** |
+| `compactionStaticContextBlockThreshold()` | **0.85** | static‑context block (refuses to add more static context) |
+| `contextBufferExhaustionThreshold()` | **0.95** | buffer exhaustion — the hard ceiling |
+
+All four are fractions of **`promptTokenLimit`**, *not* of the displayed window.
+
+### 8.2 How the CLI applies them (from `app.js` `contextInfo()`)
+
+The bundle's `contextInfo()` computes (variable names de‑minified):
+
+```js
+promptTokenLimit    = max_prompt_tokens ?? max_context_window_tokens
+compactionThreshold = Math.floor(promptTokenLimit * 0.80)          // <- the trigger
+limit /*displayed*/ = promptTokenLimit + outputTokenLimit
+bufferTokens        = outputTokenLimit + Math.floor(promptTokenLimit * (1 - 0.95))
+                    = outputTokenLimit + Math.floor(promptTokenLimit * 0.05)
+```
+
+The `0.80` and `0.95` are the same native constants, wired in a second place too — `normalizeInfiniteSessionsConfig()` sets `backgroundCompactionThreshold: 0.80` and `bufferExhaustionThreshold: 0.95`.
+
+> **Honest caveat:** `0.80` is definitively the value the CLI computes and labels as its background‑compaction threshold, applied to `promptTokenLimit`. The `if (usage ≥ threshold)` comparison itself lives in the **native** compaction processor (compiled Rust addon), so it can't be shown as readable source — the name + wiring are the evidence. The marker counts down to `0.80` because it's the first stage that actually reclaims space (`0.95` is the hard wall you normally never reach, because compaction fires first).
+
+### 8.3 Recovering `promptTokenLimit` — and why a flat "% of window" is wrong
+
+The status payload piped to the script exposes `displayed_context_limit` and `current_context_tokens`, but **not** `promptTokenLimit` or `outputTokenLimit`. Since `displayed = prompt + output`, the script recovers:
+
+```
+promptTokenLimit = displayed_context_limit − outputTokenLimit(model)
+```
+
+This is **tier‑correct**: the payload's `displayed_context_limit` already reflects the active context tier (e.g. 264 000 for Opus‑4.8 default, 1 000 000 for its long‑context tier), and `outputTokenLimit` is ~constant per model across tiers.
+
+Why not just use a percentage of the displayed window? Because the reserved **buffer** (`outputTokenLimit + 0.05 × prompt`) has a *fixed* absolute component, so as a share of the displayed window it swings widely by tier — **11 % to 37 %**:
+
+| Model / tier | prompt | output | displayed | buffer | buffer % of displayed | compaction @ `0.80×prompt` | = % of displayed |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Opus‑4.8 (264k tier) | 200 000 | 64 000 | 264 000 | 74 000 | **28.0 %** | 160 000 | 60.6 % |
+| Opus‑4.8 (1M tier) | 936 000 | 64 000 | 1 000 000 | 110 800 | **11.1 %** | 748 800 | 74.9 % |
+| GPT‑5‑mini | 128 000 | 64 000 | 192 000 | 70 400 | **36.7 %** | 102 400 | 53.3 % |
+| Sonnet‑4.6 | 168 000 | 32 000 | 200 000 | 40 400 | **20.2 %** | 134 400 | 67.2 % |
+
+So the same model auto‑compacts at **60.6 %** of its displayed window in one tier and **74.9 %** in another — a flat percentage could not track that. The marker therefore counts **absolute headroom tokens** to `0.80 × promptTokenLimit`.
+
+**A large buffer never starves the session.** `bufferTokens = output + 0.05×prompt` is *always* smaller than `displayed = prompt + output`, so usable context is always `0.95 × promptTokenLimit`; the buffer just reserves the room the model needs to write its reply. And because compaction (`0.80`) fires *before* the buffer edge (`0.95`), you reclaim space long before touching the reserve.
+
+### 8.4 Per‑model `outputTokenLimit` (the only value the marker needs)
+
+`outputTokenLimit` (default tier) per model, and where each value comes from. The CLI resolves the newest models' limits from the API at runtime, so those are recovered from the `Applied model capabilities override` lines in `~/.copilot/logs/process-*.log`; the rest come from the native model catalog (`catalogLookupModelLimits(id)`).
+
+| Model | `max_output_tokens` | Source |
+| --- | ---: | --- |
+| `claude-opus-4.8` | 64 000 | log (API override) |
+| `claude-opus-4.7` | 64 000 | log (long‑context tier; default assumed identical) |
+| `claude-opus-4.6` and older | 32 000 | native catalog |
+| `claude-sonnet-5` | 64 000 | log |
+| `claude-sonnet-4.6` / `4.5` | 32 000 | native catalog |
+| `claude-haiku-4.5` | 64 000 | native catalog |
+| `gpt-5.6-sol` / `terra` / `luna` | 128 000 | log |
+| `gpt-5.5` | 128 000 | log |
+| `gpt-5.4` (+ `-mini` / `-nano`) | 128 000 | native catalog / log |
+| `gpt-5.3-codex` | 128 000 | native catalog |
+| `gpt-5-mini` | 64 000 | native catalog |
+| `gemini-3.1-pro-preview` | 64 000 | log |
+| `gemini-3.5-flash` | 64 000 | log |
+| `mai-code-1-flash-picker` | *unknown* | catalog returns null, absent from logs → **marker hidden** |
+
+Only `outputTokenLimit` is needed (not the full prompt/context limits) because `promptTokenLimit` is derived from the live `displayed_context_limit`. Unknown/future models return `null` → the marker is simply **not shown** (never a guessed number). Override any model with `COPILOT_STATUSLINE_OUTPUT_TOKENS=<n>`.
+
+> **Tier nuance:** `outputTokenLimit` is tier‑invariant for every current model *except* older Claude (e.g. Opus‑4.6 is 32k on its 200k default tier but 64k on its 1M long‑context tier). The table uses the **default‑tier** value; running such a model in long‑context tier can shift the compaction point by ≈`0.80 ×` the output delta. Rare in practice, and overridable.
+
+### 8.5 The marker
+
+- Appears only when `current_context_tokens ≥ COMPACT_WARN × promptTokenLimit` (default `0.75`, tunable via `COPILOT_STATUSLINE_COMPACT_WARN`).
+- Reads `⚠ compact <headroom>` where `headroom = floor(0.80 × promptTokenLimit) − current_context_tokens`; once headroom ≤ 0 it reads `⚠ compacting`.
+- Escalates from mild to red as you cross from the warn stage to the `0.80` target.
+- Hide with `COPILOT_STATUSLINE_HIDE_COMPACT=1`.
+
+**Reproduce it yourself:** the native constants come from `require`-ing the addon as CommonJS and calling the four functions in §8.1; the formulas come from the `contextInfo()` body in the app bundle; the per‑model limits come from `catalogLookupModelLimits(id)` plus the `Applied model capabilities override` log lines. All are in Copilot CLI **1.0.71** (`%LOCALAPPDATA%\copilot\pkg\win32-x64\1.0.71-0\`).
 
 ---
 
