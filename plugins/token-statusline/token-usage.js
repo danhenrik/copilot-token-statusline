@@ -190,6 +190,7 @@ function dangerSgr(d) {
     // without bound because each turn re-sends the whole context as input.
     const inTok = cw.total_input_tokens || 0;
     const outTok = cw.total_output_tokens || 0;
+    const cacheRead = cw.total_cache_read_tokens || 0;
     const cumTotal = cw.total_tokens != null ? cw.total_tokens : inTok + outTok;
 
     // Live context-window occupancy — this is what `/context` shows.
@@ -282,6 +283,16 @@ function dangerSgr(d) {
         cseg += ` (in ${fmt(inTok)}/out ${fmt(outTok)})`;
       }
       segs.push(paint(cseg, base));
+    }
+    // Cache-hit rate: share of INPUT tokens served from the prompt cache (cheap
+    // reads) vs freshly processed. High = your stable prefix is being reused
+    // well. Objective — straight from the payload, no thresholds. Hide with
+    // COPILOT_STATUSLINE_HIDE_CACHE=1.
+    const hideCache = /^(1|true|yes|on)$/i.test(
+      process.env.COPILOT_STATUSLINE_HIDE_CACHE || ''
+    );
+    if (!hideCache && inTok > 0 && cacheRead > 0) {
+      segs.push(paint(`cache ${Math.round((cacheRead / inTok) * 100)}%`, base));
     }
     // Credits used this session + estimated real money. Hide the $ estimate
     // with COPILOT_STATUSLINE_HIDE_USD=1.

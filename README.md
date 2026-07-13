@@ -3,13 +3,14 @@
 A custom **status line for [GitHub Copilot CLI](https://docs.github.com/copilot/how-tos/use-copilot-agents/use-copilot-cli)** that puts your per-session token and AI-credit usage back on the footer — the visibility that was lost when billing moved to AI Credits.
 
 ```
-ctx 125k/200k (63%) | Σ3.4M (in 3.35M/out 50k) | 0.63 AIC ≈$0.01
+ctx 125k/200k (63%) | Σ3.4M (in 3.35M/out 50k) | cache 89% | 0.63 AIC ≈$0.01
 ```
 
 | Segment | Meaning |
 | --- | --- |
 | `ctx 125k/200k (63%)` | Live `/context` occupancy. Colored **green → yellow → orange → red** by a per-model "dumb zone" gradient, so you can *see* when you're entering the range where models start to degrade. |
 | `Σ3.4M (in 3.35M/out 50k)` | Cumulative tokens that actually flowed through the API this session (input/output split) — the real cost driver, not the context size. |
+| `cache 89%` | Share of input tokens served from the prompt cache (cheap reads) vs freshly processed — an objective signal (no thresholds) that your stable prefix is being reused. |
 | `0.63 AIC ≈$0.01` | AI Credits used this session and an estimated USD cost (1 AI Credit ≈ $0.01). |
 
 It also writes a per-session ledger to `<COPILOT_HOME>/statusline/sessions/<session_id>.json`.
@@ -106,6 +107,7 @@ The status-line script reads these at render time:
 | `COPILOT_STATUSLINE_HIDE_USD` | — | Set to `1` to hide the `≈$` cost estimate. |
 | `COPILOT_STATUSLINE_HIDE_CUMULATIVE` | — | Set to `1` to hide the `Σ` cumulative segment. |
 | `COPILOT_STATUSLINE_HIDE_CONTEXT` | — | Set to `1` to hide the `ctx` segment. |
+| `COPILOT_STATUSLINE_HIDE_CACHE` | — | Set to `1` to hide the `cache %` segment. |
 | `COPILOT_STATUSLINE_NO_GRADIENT` | — | Set to `1` to disable the color gradient (grey ctx). |
 | `COPILOT_STATUSLINE_COLOR` | `auto` | Base color of the ordinary status text. `none`/`off` disables color; `auto`/`github`/`dark` = grey `#9198A1`; `light` = `#59636e`; `dim` = faint; or a bare SGR / `R;G;B` triple. |
 | `NO_COLOR` | — | Standard: any non-empty value disables color. |
