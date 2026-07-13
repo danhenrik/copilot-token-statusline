@@ -107,7 +107,7 @@ The status-line script reads these at render time:
 | `COPILOT_STATUSLINE_HIDE_CUMULATIVE` | — | Set to `1` to hide the `Σ` cumulative segment. |
 | `COPILOT_STATUSLINE_HIDE_CONTEXT` | — | Set to `1` to hide the `ctx` segment. |
 | `COPILOT_STATUSLINE_NO_GRADIENT` | — | Set to `1` to disable the color gradient (grey ctx). |
-| `COPILOT_STATUSLINE_COLOR` | `auto` | `always` / `never` / `auto`. |
+| `COPILOT_STATUSLINE_COLOR` | `auto` | Base color of the ordinary status text. `none`/`off` disables color; `auto`/`github`/`dark` = grey `#9198A1`; `light` = `#59636e`; `dim` = faint; or a bare SGR / `R;G;B` triple. |
 | `NO_COLOR` | — | Standard: any non-empty value disables color. |
 | `COPILOT_STATUSLINE_ZONES` | — | Override the per-model dumb-zone anchors (advanced). |
 | `COPILOT_HOME` | `~/.copilot` | Base dir for the script + settings. |
@@ -118,7 +118,9 @@ The status-line script reads these at render time:
 
 The `ctx` color reflects how close the session is to the range where model quality drops off.
 
-**Provenance (honest):** the *general* thresholds are corroborated across many independent studies — RULER, Chroma "Context Rot", NoLiMa, "Lost in the Middle", HumanLayer's coding-session data, and Anthropic's context-engineering guidance (onset commonly ~32k, effective context often ~⅓–½ of advertised, coding "dumb zone" ~50k–100k). The *specific per-model* anchors in `token-usage.js` are an **extrapolation** of those ranges scaled by each family's generation/long-context reputation — not a direct measurement of these exact models. They're tunable via `COPILOT_STATUSLINE_ZONES`.
+**Provenance (honest):** the *general* thresholds are corroborated across many independent studies — RULER, Chroma "Context Rot", NoLiMa, "Lost in the Middle", and Anthropic's context-engineering guidance (onset commonly ~32k, effective context often ~⅓–½ of advertised, coding degradation hits earliest). The *specific per-model* anchors in `token-usage.js` are an **extrapolation** of those ranges scaled by each family's generation/long-context reputation — not a direct measurement of these exact models. Unmatched/unknown models fall back to a **window-relative** default (`min(50%×window, 128k)` smart, `min(90%×window, 400k)` dumb). They're tunable via `COPILOT_STATUSLINE_ZONES`.
+
+**→ Full sources, per-family reasoning, and the extrapolation method are documented in [THRESHOLDS.md](./THRESHOLDS.md).**
 
 ---
 

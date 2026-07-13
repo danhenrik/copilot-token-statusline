@@ -98,6 +98,7 @@ function paint(text, sgr) {
 //   smartUntil = still-reliable ceiling  -> stays green up to here
 //   dumbFrom   = clearly inside dumb zone -> full red at/after here
 // The context segment fades green -> yellow -> orange -> red between them.
+// Unmatched models fall back to a WINDOW-RELATIVE default (see defaultZone).
 // Override any model at runtime with COPILOT_STATUSLINE_ZONES="smartUntil,dumbFrom".
 const MODEL_ZONES = [
   [/codex/, { smartUntil: 90000, dumbFrom: 220000, tier: 'gpt-codex' }],
@@ -110,15 +111,29 @@ const MODEL_ZONES = [
   [/gemini/, { smartUntil: 100000, dumbFrom: 250000, tier: 'gemini-pro' }],
   [/mai/, { smartUntil: 40000, dumbFrom: 100000, tier: 'mai' }],
 ];
-const DEFAULT_ZONE = { smartUntil: 50000, dumbFrom: 120000, tier: 'default' };
+// Fallback for UNMATCHED models: window-relative (RULER's "effective context
+// ~= 50% of advertised" for the strongest models) but capped in absolute terms,
+// because NoLiMa/Chroma/HumanLayer show the degradation onset is an absolute
+// band (~32k-100k) that does NOT scale with window size -- a flat percentage
+// would hand a very large window a free pass. Known families above keep their
+// absolute anchors. When the window size is unknown we use DEFAULT_STATIC.
+const DEFAULT_STATIC = { smartUntil: 50000, dumbFrom: 120000, tier: 'default' };
+function defaultZone(limit) {
+  if (!Number.isFinite(limit) || limit <= 0) return DEFAULT_STATIC;
+  return {
+    smartUntil: Math.min(Math.round(0.5 * limit), 128000),
+    dumbFrom: Math.min(Math.round(0.9 * limit), 400000),
+    tier: 'default',
+  };
+}
 
-function zonesFor(modelId) {
+function zonesFor(modelId, limit) {
   const ov = (process.env.COPILOT_STATUSLINE_ZONES || '').trim();
   const m = ov.match(/^(\d+)\s*[,:/]\s*(\d+)$/);
   if (m) return { smartUntil: +m[1], dumbFrom: +m[2], tier: 'override' };
   const id = String(modelId || '').toLowerCase();
   for (const [re, z] of MODEL_ZONES) if (re.test(id)) return z;
-  return DEFAULT_ZONE;
+  return defaultZone(limit);
 }
 
 // Danger score: 0 (smart / green) .. 1 (deep dumb zone / red).
@@ -223,7 +238,7 @@ function dangerSgr(d) {
 
     // Map the model to its "dumb zone" and score how deep the context is (0..1).
     const modelId = (s.model && (s.model.id || s.model.display_name)) || '';
-    const zone = zonesFor(modelId);
+    const zone = zonesFor(modelId, ctxLimit);
     const curForDanger =
       ctxCur != null
         ? ctxCur
